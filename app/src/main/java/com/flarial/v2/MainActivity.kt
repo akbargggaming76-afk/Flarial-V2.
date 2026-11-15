@@ -1,20 +1,18 @@
 
 package com.flarial.v2
 
-import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,230 +28,131 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             FlarialApp(
-                onPlay = { launchMinecraft() }
+                onPlay = { openMinecraft() }
             )
         }
     }
 
-    private fun launchMinecraft() {
-        val intent = packageManager.getLaunchIntentForPackage(
-            "com.mojang.minecraftpe"
-        )
+    private fun openMinecraft() {
+        val packageName = "com.mojang.minecraftpe"
 
-        if (intent != null) {
-            startActivity(intent)
+        val launchIntent =
+            packageManager.getLaunchIntentForPackage(packageName)
+
+        if (launchIntent != null) {
+            startActivity(launchIntent)
         } else {
-            Toast.makeText(
+            android.widget.Toast.makeText(
                 this,
                 "Minecraft tidak ditemukan!",
-                Toast.LENGTH_LONG
+                android.widget.Toast.LENGTH_SHORT
             ).show()
         }
     }
 }
-
-private val Purple = Color(0xFF9B5CFF)
-private val Dark = Color(0xFF100B1D)
-private val CardColor = Color(0xFF211832)
 
 @Composable
 fun FlarialApp(onPlay: () -> Unit) {
 
     var page by remember { mutableStateOf("home") }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val background = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF251044),
+            Color(0xFF10091E),
+            Color(0xFF080610)
+        )
+    )
 
-    var importType by remember { mutableStateOf("addon") }
-
-    val filePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            val mimeIntent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "*/*")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-
-            try {
-                context.startActivity(mimeIntent)
-            } catch (e: Exception) {
-                Toast.makeText(
-                    context,
-                    "Tidak dapat membuka file ini",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF281442),
-                        Dark,
-                        Color(0xFF080610)
-                    )
-                )
-            )
-            .padding(22.dp)
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary = Color(0xFFB56CFF),
+            secondary = Color(0xFF9B55E8),
+            background = Color(0xFF10091E)
+        )
     ) {
-
-        when (page) {
-
-            "home" -> {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-
-                    Text(
-                        "FLARIAL V2",
-                        color = Color.White,
-                        fontSize = 34.sp
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Text(
-                        "Minecraft Bedrock Companion",
-                        color = Purple
-                    )
-
-                    Spacer(Modifier.height(55.dp))
-
-                    Button(
-                        onClick = onPlay,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(58.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = Purple
-                        ),
-                        shape = RoundedCornerShape(18.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(background)
+                .padding(22.dp)
+        ) {
+            when (page) {
+                "home" -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            "PLAY",
+                            "FLARIAL V2",
                             color = Color.White,
-                            fontSize = 20.sp
+                            fontSize = 30.sp
                         )
-                    }
 
-                    Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(50.dp))
 
-                    Text(
-                        "Minecraft Bedrock",
-                        color = Color.LightGray
-                    )
-
-                    Spacer(Modifier.height(65.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
                         Button(
-                            onClick = { page = "settings" },
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = CardColor
-                            )
+                            onClick = onPlay,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(65.dp),
+                            shape = RoundedCornerShape(18.dp)
                         ) {
-                            Text("Setting", color = Color.White)
+                            Text("PLAY", fontSize = 22.sp)
                         }
 
-                        Button(
-                            onClick = { page = "about" },
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = CardColor
-                            )
+                        Spacer(Modifier.height(12.dp))
+
+                        Text(
+                            "Minecraft Bedrock",
+                            color = Color.LightGray
+                        )
+
+                        Spacer(Modifier.height(60.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text("Tentang", color = Color.White)
+                            Button(onClick = { page = "settings" }) {
+                                Text("Setting")
+                            }
+
+                            Button(onClick = { page = "about" }) {
+                                Text("Tentang")
+                            }
                         }
                     }
                 }
-            }
 
-            "settings" -> {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
+                "settings" -> SettingsPage(
+                    onBack = { page = "home" }
+                )
 
-                    Text(
-                        "SETTING",
-                        color = Color.White,
-                        fontSize = 28.sp
-                    )
-
-                    Spacer(Modifier.height(25.dp))
-
-                    ImportButton("Addons") {
-                        importType = "addon"
-                        filePicker.launch(
-                            arrayOf("*/*")
-                        )
-                    }
-
-                    ImportButton("Resource Packs") {
-                        importType = "resource"
-                        filePicker.launch(
-                            arrayOf("*/*")
-                        )
-                    }
-
-                    ImportButton("Worlds") {
-                        importType = "world"
-                        filePicker.launch(
-                            arrayOf("*/*")
-                        )
-                    }
-
-                    Spacer(Modifier.height(25.dp))
-
-                    Button(
-                        onClick = { page = "home" }
+                "about" -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text("Kembali")
-                    }
-                }
-            }
+                        Text(
+                            "Tentang FLARIAL V2",
+                            color = Color.White,
+                            fontSize = 24.sp
+                        )
 
-            "about" -> {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
+                        Spacer(Modifier.height(15.dp))
 
-                    Text(
-                        "TENTANG FLARIAL V2",
-                        color = Color.White,
-                        fontSize = 25.sp
-                    )
+                        Text(
+                            "Minecraft Bedrock Companion",
+                            color = Color.LightGray
+                        )
 
-                    Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(30.dp))
 
-                    Text(
-                        "FLARIAL V2 v0.1",
-                        color = Purple,
-                        fontSize = 19.sp
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Text(
-                        "Minecraft Bedrock Companion App",
-                        color = Color.LightGray
-                    )
-
-                    Spacer(Modifier.height(35.dp))
-
-                    Button(
-                        onClick = { page = "home" }
-                    ) {
-                        Text("Kembali")
+                        Button(onClick = { page = "home" }) {
+                            Text("Kembali")
+                        }
                     }
                 }
             }
@@ -262,25 +161,81 @@ fun FlarialApp(onPlay: () -> Unit) {
 }
 
 @Composable
-fun ImportButton(
-    title: String,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 7.dp)
-            .height(55.dp),
-        colors = ButtonDefaults.buttonColors(
-            backgroundColor = CardColor
-        ),
-        shape = RoundedCornerShape(14.dp)
+fun SettingsPage(onBack: () -> Unit) {
+
+    var selectedFiles by remember {
+        mutableStateOf("Belum ada file dipilih")
+    }
+
+    val filePicker =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument()
+        ) { uri: Uri? ->
+            if (uri != null) {
+                selectedFiles = uri.lastPathSegment ?: "File dipilih"
+            }
+        }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            title,
+            "SETTING",
             color = Color.White,
-            fontSize = 16.sp
+            fontSize = 27.sp
         )
+
+        Spacer(Modifier.height(30.dp))
+
+        Button(
+            onClick = {
+                filePicker.launch(
+                    arrayOf(
+                        "application/octet-stream",
+                        "application/zip",
+                        "*/*"
+                    )
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Import Addons")
+        }
+
+        Button(
+            onClick = {
+                filePicker.launch(
+                    arrayOf("*/*")
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Resource Packs")
+        }
+
+        Button(
+            onClick = {
+                filePicker.launch(
+                    arrayOf("*/*")
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Worlds")
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        Text(
+            selectedFiles,
+            color = Color.LightGray
+        )
+
+        Spacer(Modifier.height(30.dp))
+
+        Button(onClick = onBack) {
+            Text("Kembali")
+        }
     }
 }
