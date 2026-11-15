@@ -1,11 +1,14 @@
 
-name: Build Flarial V2
+name: Build FLARIAL V2 APK
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -23,13 +26,25 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Check Files
+        run: |
+          test -f settings.gradle
+          test -f build.gradle
+          test -f gradle.properties
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
+          test -f app/src/main/java/com/flarial/v2/MainActivity.kt
+          test -f app/src/main/java/com/flarial/v2/FloatingService.kt
 
       - name: Validate Manifest
         run: |
           python3 -c "import xml.etree.ElementTree as ET; ET.parse('app/src/main/AndroidManifest.xml')"
 
       - name: Build APK
-        run: gradle --no-daemon assembleDebug
+        run: gradle --no-daemon --stacktrace assembleDebug
 
       - name: Prepare APK
         run: |
@@ -41,3 +56,4 @@ jobs:
         with:
           name: Flarial-V2
           path: output/Flarial-V2.apk
+          if-no-files-found: error
