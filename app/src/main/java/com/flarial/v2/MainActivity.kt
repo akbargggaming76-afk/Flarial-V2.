@@ -2,12 +2,12 @@
 package com.flarial.v2
 
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,29 +23,70 @@ import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
 
+    private val overlayPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) {
+            if (Settings.canDrawOverlays(this)) {
+                launchMinecraft()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Izin Floating Overlay belum diberikan",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             FlarialApp(
-                onPlay = { openMinecraft() }
+                onPlay = { requestOverlayAndPlay() }
             )
         }
     }
 
-    private fun openMinecraft() {
+    private fun requestOverlayAndPlay() {
+        if (Settings.canDrawOverlays(this)) {
+            launchMinecraft()
+        } else {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            overlayPermissionLauncher.launch(intent)
+        }
+    }
+
+    private fun launchMinecraft() {
         val packageName = "com.mojang.minecraftpe"
 
-        val launchIntent =
+        val minecraftIntent =
             packageManager.getLaunchIntentForPackage(packageName)
 
-        if (launchIntent != null) {
-            startActivity(launchIntent)
-        } else {
-            android.widget.Toast.makeText(
+        if (minecraftIntent == null) {
+            Toast.makeText(
                 this,
                 "Minecraft tidak ditemukan!",
-                android.widget.Toast.LENGTH_SHORT
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
+        try {
+            startService(
+                Intent(this, FloatingService::class.java)
+            )
+
+            startActivity(minecraftIntent)
+
+        } catch (error: Exception) {
+            Toast.makeText(
+                this,
+                "Gagal membuka Minecraft: ${error.message}",
+                Toast.LENGTH_LONG
             ).show()
         }
     }
@@ -67,8 +108,7 @@ fun FlarialApp(onPlay: () -> Unit) {
     MaterialTheme(
         colorScheme = darkColorScheme(
             primary = Color(0xFFB56CFF),
-            secondary = Color(0xFF9B55E8),
-            background = Color(0xFF10091E)
+            secondary = Color(0xFF9B55E8)
         )
     ) {
         Box(
@@ -112,22 +152,29 @@ fun FlarialApp(onPlay: () -> Unit) {
                         Spacer(Modifier.height(60.dp))
 
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement =
+                                Arrangement.spacedBy(12.dp)
                         ) {
-                            Button(onClick = { page = "settings" }) {
+                            Button(
+                                onClick = { page = "settings" }
+                            ) {
                                 Text("Setting")
                             }
 
-                            Button(onClick = { page = "about" }) {
+                            Button(
+                                onClick = { page = "about" }
+                            ) {
                                 Text("Tentang")
                             }
                         }
                     }
                 }
 
-                "settings" -> SettingsPage(
-                    onBack = { page = "home" }
-                )
+                "settings" -> {
+                    SettingsPage {
+                        page = "home"
+                    }
+                }
 
                 "about" -> {
                     Column(
@@ -163,16 +210,17 @@ fun FlarialApp(onPlay: () -> Unit) {
 @Composable
 fun SettingsPage(onBack: () -> Unit) {
 
-    var selectedFiles by remember {
+    var selectedFile by remember {
         mutableStateOf("Belum ada file dipilih")
     }
 
     val filePicker =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument()
-        ) { uri: Uri? ->
+        androidx.activity.compose.rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
             if (uri != null) {
-                selectedFiles = uri.lastPathSegment ?: "File dipilih"
+                selectedFile =
+                    uri.lastPathSegment ?: "File dipilih"
             }
         }
 
@@ -190,13 +238,7 @@ fun SettingsPage(onBack: () -> Unit) {
 
         Button(
             onClick = {
-                filePicker.launch(
-                    arrayOf(
-                        "application/octet-stream",
-                        "application/zip",
-                        "*/*"
-                    )
-                )
+                filePicker.launch(arrayOf("*/*"))
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -205,9 +247,7 @@ fun SettingsPage(onBack: () -> Unit) {
 
         Button(
             onClick = {
-                filePicker.launch(
-                    arrayOf("*/*")
-                )
+                filePicker.launch(arrayOf("*/*"))
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -216,9 +256,7 @@ fun SettingsPage(onBack: () -> Unit) {
 
         Button(
             onClick = {
-                filePicker.launch(
-                    arrayOf("*/*")
-                )
+                filePicker.launch(arrayOf("*/*"))
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -228,7 +266,7 @@ fun SettingsPage(onBack: () -> Unit) {
         Spacer(Modifier.height(20.dp))
 
         Text(
-            selectedFiles,
+            selectedFile,
             color = Color.LightGray
         )
 
