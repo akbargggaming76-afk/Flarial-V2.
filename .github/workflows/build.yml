@@ -26,20 +26,36 @@ jobs:
 
       - name: Check Project Files
         run: |
+          echo "Checking project files..."
+
           if [ ! -f settings.gradle ]; then
             echo "ERROR: settings.gradle tidak ditemukan!"
             exit 1
           fi
 
+          if [ ! -f build.gradle ]; then
+            echo "ERROR: build.gradle tidak ditemukan!"
+            exit 1
+          fi
+
+          if [ ! -f app/build.gradle ]; then
+            echo "ERROR: app/build.gradle tidak ditemukan!"
+            exit 1
+          fi
+
+          echo "All required files found."
+
       - name: Build Flarial V2
-        run: gradle --no-daemon assembleDebug
+        run: gradle --no-daemon --stacktrace --info assembleDebug
 
       - name: Rename APK
+        if: success()
         run: |
           mkdir -p output
           cp app/build/outputs/apk/debug/app-debug.apk output/Flarial-V2.apk
 
       - name: Upload Flarial V2 APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Flarial-V2
