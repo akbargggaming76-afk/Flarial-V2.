@@ -26,37 +26,52 @@ jobs:
 
       - name: Check Project Files
         run: |
-          echo "Checking project files..."
-
-          if [ ! -f settings.gradle ]; then
-            echo "ERROR: settings.gradle tidak ditemukan!"
+          test -f settings.gradle || {
+            echo "ERROR: settings.gradle tidak ditemukan"
             exit 1
-          fi
+          }
 
-          if [ ! -f build.gradle ]; then
-            echo "ERROR: build.gradle tidak ditemukan!"
+          test -f build.gradle || {
+            echo "ERROR: build.gradle tidak ditemukan"
             exit 1
-          fi
+          }
 
-          if [ ! -f app/build.gradle ]; then
-            echo "ERROR: app/build.gradle tidak ditemukan!"
+          test -f app/build.gradle || {
+            echo "ERROR: app/build.gradle tidak ditemukan"
             exit 1
-          fi
+          }
 
-          echo "All required files found."
+          test -f app/src/main/AndroidManifest.xml || {
+            echo "ERROR: AndroidManifest.xml tidak ditemukan"
+            exit 1
+          }
+
+      - name: Validate Android Manifest
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+
+          path = "app/src/main/AndroidManifest.xml"
+
+          try:
+              ET.parse(path)
+              print("AndroidManifest.xml valid!")
+          except ET.ParseError as error:
+              print(f"Manifest XML error: {error}")
+              raise SystemExit(1)
+          PY
 
       - name: Build Flarial V2
-        run: gradle --no-daemon --stacktrace --info assembleDebug
+        run: gradle --no-daemon --stacktrace assembleDebug
 
       - name: Rename APK
-        if: success()
         run: |
           mkdir -p output
           cp app/build/outputs/apk/debug/app-debug.apk output/Flarial-V2.apk
 
-      - name: Upload Flarial V2 APK
-        if: success()
+      - name: Upload Flarial V2
         uses: actions/upload-artifact@v4
         with:
           name: Flarial-V2
           path: output/Flarial-V2.apk
+          if-no-files-found: error
